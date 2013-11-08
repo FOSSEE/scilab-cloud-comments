@@ -1,0 +1,116 @@
+<?php
+
+function cloud_comments_help($path, $arg) {
+    $output = '';
+    switch($path) {
+        case "admin/help#cloud_comments":
+            $output = "<p>" . t("Displays the Comments on cloud and enables the admin to reply to them via e-mail: textbook@scilab.in") . "</p>";
+            break;
+    }
+    return $output;
+} // function cloud_comments_help
+
+function cloud_comments_perm() {
+    return array("access cloud_comments", "reply cloud_comments");
+} // function cloud_comments_perm
+
+function cloud_comments_all() {
+    $types = array(
+            "None",
+            "Blank Code / Incorrect code",
+            "Output error",
+            "Execution error",
+            "Missing example(s)",
+            "None",
+            "Blank output",
+            "Any other"
+    );
+    $categories = array(
+            "Others",
+            "Fluid Mechanics",
+            "Control Theory &amp; Control Systems",
+            "Chemical Engineering",
+            "Thermodynamics",
+            "Mechanical Engineering",
+            "Signal Processing",
+            "Digital Communications",
+            "Electrical Technology",
+            "Mathematics &amp; Pure Science",
+            "Analog Electronics",
+            "Digital Electronics",
+            "Computer Programming",
+            "Others"
+    );
+    
+    $page_content = "";
+    $query = "SELECT * FROM {scilab_cloud_comment}";
+    $query_result = db_query($query);
+
+    while ($row = db_fetch_object($query_result)) {
+        $q = "SELECT book from {textbook_companion_preference} where id = '%d'";
+        $qr = db_query($q, $row->books);
+        $obj = db_fetch_object($qr);
+
+        $page_content .= t("<div class='feedback'>");
+        $page_content .= t("<div class='from'> <b>From:</b> ") . $row->email . t("</div>");
+        $page_content .= t("<div class='type'> <b>Type:</b> ") . $types[$row->type] . t("</div>");
+        $page_content .= t("<div class='type'> <b>Book:</b> ") . $obj->book . t("</div>");
+        $page_content .= t("<div class='type'> <b>Category:</b> ") . $categories[$row->category] . t("</div>");
+        $page_content .= t("<div class='comment'> <b>Comment:</b><br>") . $row->comment . t("</div>");
+        
+        if (user_access("reply cloud_comments")) {
+            $page_content .= t("<a class='btn-reply' href='#'>Reply</a><br>");
+            $page_content .= drupal_get_form("cloud_comments_reply_form_".$row->id, $row->id);
+        }
+        $page_content .= t("</div>");
+    } // while ends
+
+    return $page_content;
+} // function cloud_comments_all
+
+function cloud_comments_forms($form_id) {
+  $forms = array();
+  if (strpos($form_id, 'cloud_comments_reply_form_') === 0) {
+    $forms[$form_id] = array(
+      'callback' => 'cloud_comments_reply_form',
+    );
+  }
+  return $forms;
+} // function cloud_comments_forms
+
+function cloud_comments_reply_form($form_state, $comment_id) {
+    $form = array();
+    $form["#submit"] = array(
+        'cloud_comments_reply_form_submit',
+    );
+
+    $form["content"] = array(
+        '#type' => 'textarea'
+    );
+    $form["hidden"] = array(
+        '#type' => 'hidden',
+        '#value' => $comment_id
+    );
+    $form["submit"] = array(
+        '#type' => 'submit',
+        '#value' => 'submit'
+    );
+
+    return $form;
+} // function reply_form
+
+function cloud_comments_reply_form_submit($form, &$form_state) {
+    
+} // function reply_form_submit
+
+function cloud_comments_menu() {
+    $items = array();
+    $items['cloud_comments'] = array(
+        'title' => 'Cloud Comments',
+        'page callback' => 'cloud_comments_all',
+        'access arguments' => array("access cloud_comments"),
+        'type' => MENU_CALLBACK,
+    );
+} // function cloud_comments_menu
+
+?>
