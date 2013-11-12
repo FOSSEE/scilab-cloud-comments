@@ -47,20 +47,46 @@ function cloud_comments_all() {
     $query_result = db_query($query);
 
     while ($row = db_fetch_object($query_result)) {
+        
+        $border = $row->reply_status?"sent":"not-sent";
+        $page_content .= t("<div class='feedback {$border}'>");
+        
+        $page_content .= t("<div class='from'> <b>From:</b> ") . $row->email . t("</div>");
+        
+        $page_content .= t("<div class='type'> <b>Type:</b> ") . $types[$row->type] . t("</div>");
+        
         $q = "SELECT book from {textbook_companion_preference} where id = '%d'";
         $qr = db_query($q, $row->books);
         $obj = db_fetch_object($qr);
-
-        $page_content .= t("<div class='feedback'>");
-        $page_content .= t("<div class='from'> <b>From:</b> ") . $row->email . t("</div>");
-        $page_content .= t("<div class='type'> <b>Type:</b> ") . $types[$row->type] . t("</div>");
         $page_content .= t("<div class='type'> <b>Book:</b> ") . $obj->book . t("</div>");
-        $page_content .= t("<div class='type'> <b>Category:</b> ") . $categories[$row->category] . t("</div>");
-        $page_content .= t("<div class='comment'> <b>Comment:</b><br>") . $row->comment . t("</div>");
         
-        if (user_access("reply cloud_comments")) {
-            $page_content .= t("<a class='btn-reply' href='#'>Reply</a><br>");
-            $page_content .= drupal_get_form("cloud_comments_reply_form_".$row->id, $row->id);
+        $q = "SELECT name from {textbook_companion_chapter} where id = '%d'";
+        $qr = db_query($q, $row->chapter);
+        $obj = db_fetch_object($qr);
+        $chapter = $obj->name?$obj->name:"None";
+        $page_content .= t("<div class='type'> <b>Chapter: </b> ") . $chapter . t("</div>");
+        
+        $page_content .= t("<div class='type'> <b>Category: </b>") . $categories[$row->category] . t("</div>");
+        
+        $q = "SELECT caption from {textbook_companion_example} where id = '%d'";
+        $qr = db_query($q, $row->example);
+        $obj = db_fetch_object($qr);
+        $example_link = $obj->caption?l($obj->caption,"http://cloud.scilab.in/index.php?eid=".$row->example):"None";
+        
+        $page_content .= t("<div class='example'> <b>Example: </b>") . $example_link .t("</div>");
+        
+        $page_content .= t("<div class='comment'> <br><b>Comment:</b><br>") . $row->comment . t("</div>");
+        
+        if ($row->reply) {
+            $page_content .= t("<div class='reply'> <br><b>Reply Sent:</b><br>") . $row->reply . t("</div>");
+        }
+        else {
+            if (user_access("reply cloud_comments")) {
+                $page_content .= t("<a class='form_{$row->id}' href='#form_{$row->id}'>Reply</a><br>");
+                $page_content .= t("<div id='form_{$row->id}' class='form-wrapper'>");
+                $page_content .= drupal_get_form("cloud_comments_reply_form_".$row->id, $row->id);
+                $page_content .= t("</div>");
+            }
         }
         $page_content .= t("</div>");
     } // while ends
@@ -85,7 +111,8 @@ function cloud_comments_reply_form($form_state, $comment_id) {
     );
 
     $form["content"] = array(
-        '#type' => 'textarea'
+        '#type' => 'textarea',
+        '#wysiwyg' => True
     );
     $form["hidden"] = array(
         '#type' => 'hidden',
@@ -100,8 +127,32 @@ function cloud_comments_reply_form($form_state, $comment_id) {
 } // function reply_form
 
 function cloud_comments_reply_form_submit($form, &$form_state) {
+    $query = "UPDATE {scilab_cloud_comment} SET reply = '%s', reply_status = 1 WHERE id = %d";
+    $query_result = db_query($query, $form_state["values"]["content"], $form_state["values"]["hidden"]);
     
+    $message = array(
+        'to' => 'rush2jrp@gmail.com',
+        'subject' => t("Comment Reply"),
+        'body' => t($form_state["values"]["content"]),
+        'headers' => array("Content-type" => "text/html; charset=iso-8859-1")
+    );
+    drupal_mail_send($message);
+
+    if (!$query_result) {
+        drupal_set_message("Database updation failed");
+    } else {
+        drupal_set_message("Message sent. . . ");
+    }
+
 } // function reply_form_submit
+
+function cloud_comments_delete($comment_id=NULL) {
+    if ($comment_id && user_access("reply cloud_comments")) {
+        return $comment_id;
+    } else {
+        return "NULL";
+    }
+}
 
 function cloud_comments_menu() {
     $items = array();
@@ -111,6 +162,20 @@ function cloud_comments_menu() {
         'access arguments' => array("access cloud_comments"),
         'type' => MENU_CALLBACK,
     );
+
+    $items['cloud_comments/delete'] = array(
+        'title' => 'Cloud Comments',
+        'page callback' => 'cloud_comments_delete',
+        'access arguments' => array("access cloud_comments"),
+        'type' => MENU_CALLBACK,
+    );
+    
+    return $items;
 } // function cloud_comments_menu
+
+function cloud_comments_init() {
+    drupal_add_css(drupal_get_path("module", "cloud_comments") . "/css/cloud_comments.css");
+    drupal_add_js(drupal_get_path("module", "cloud_comments") . "/js/cloud_comments.js");
+} //function cloud_comments_init
 
 ?>
