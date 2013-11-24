@@ -1,10 +1,29 @@
 $(document).ready(function(){
-    $(".feedback a").click(function(){
-        var clicked = $(this).attr("class");
-        console.log(clicked);
-        $('#'+clicked).slideToggle();
-    });
-
     /* to avoid CKE partial loading... */
     $('.form-wrapper').slideToggle();
+
+    /* reply button action */
+    $(".btn-reply a").click(function(){
+        var clicked = $(this).attr("class");
+        $('#'+clicked).slideToggle();
+        console.log($(this).html());
+        if ($(this).html() == "Reply") {
+            $(this).html("Close");
+        } else {
+            $(this).html("Reply");
+        }
+    });
+
+    /* delete link */
+    $(".delete").click(function(e){
+        sure = confirm("Are you sure ?");
+        console.log(sure);
+        if (sure) {
+            window.location.href = $(this).attr("href");
+        }
+        else {
+            console.log("nopees");
+        }
+        e.preventDefault();
+    });
 });
