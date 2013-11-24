@@ -140,7 +140,7 @@ function cloud_comments_reply_form_submit($form, &$form_state) {
         'to' => $obj->email,
         'subject' => t("Comment Reply"),
         'body' => t($form_state["values"]["content"]),
-        'headers' => array("Content-type" => "text/html; charset=iso-8859-1")
+        'headers' => array("From" => "textbook@scilab.in", "Content-type" => "text/html; charset=iso-8859-1")
     );
     drupal_mail_send($message);
 
