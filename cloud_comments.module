@@ -14,7 +14,7 @@ function cloud_comments_perm() {
     return array("access cloud_comments", "reply cloud_comments");
 } // function cloud_comments_perm
 
-function cloud_comments_all() {
+function cloud_comments_all($example_id=0) {
     $types = array(
             "None",
             "Blank Code / Incorrect code",
@@ -43,7 +43,11 @@ function cloud_comments_all() {
     );
 
     $page_content = "";
-    $query = "SELECT scc.*, tcc.number AS chapter_no, tce.number AS example_no FROM scilab_cloud_comment scc LEFT JOIN textbook_companion_chapter tcc ON tcc.id = scc.chapter LEFT JOIN textbook_companion_example tce ON tce.id = scc.example ORDER BY scc.date DESC";
+    if($example_id) {
+        $query = "SELECT scc.*, tcc.number AS chapter_no, tce.number AS example_no FROM scilab_cloud_comment scc LEFT JOIN textbook_companion_chapter tcc ON tcc.id = scc.chapter LEFT JOIN textbook_companion_example tce ON tce.id = scc.example WHERE scc.example = {$example_id} ORDER BY scc.date DESC";
+    } else {
+        $query = "SELECT scc.*, tcc.number AS chapter_no, tce.number AS example_no FROM scilab_cloud_comment scc LEFT JOIN textbook_companion_chapter tcc ON tcc.id = scc.chapter LEFT JOIN textbook_companion_example tce ON tce.id = scc.example ORDER BY scc.date DESC";
+    }
     $query_result = pager_query($query, 5, 0 );
     //$query_result = db_query($query);
 
@@ -53,7 +57,9 @@ function cloud_comments_all() {
         $page_content .= t("<div class='feedback {$border}'>");
         
         $page_content .= t("<div class='timestamp'>") . $row->date . t("</div>");
-        $page_content .= t("<div class='from'> <b>From:</b> ") . $row->email . t("</div>");
+        if (user_access("reply cloud_comments")) {
+            $page_content .= t("<div class='from'> <b>From:</b> ") . $row->email . t("</div>");
+        }
 
         $page_content .= t("<div class='type'> <b>Type:</b> ") . $types[$row->type] . t("</div>");
 
