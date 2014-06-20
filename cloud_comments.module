@@ -43,8 +43,9 @@ function cloud_comments_all() {
     );
 
     $page_content = "";
-    $query = "SELECT * FROM {scilab_cloud_comment}";
-    $query_result = db_query($query);
+    $query = "SELECT scc.*, tcc.number AS chapter_no, tce.number AS example_no FROM scilab_cloud_comment scc LEFT JOIN textbook_companion_chapter tcc ON tcc.id = scc.chapter LEFT JOIN textbook_companion_example tce ON tce.id = scc.example ORDER BY scc.date DESC";
+    $query_result = pager_query($query, 5, 0 );
+    //$query_result = db_query($query);
 
     while ($row = db_fetch_object($query_result)) {
 
@@ -65,7 +66,7 @@ function cloud_comments_all() {
         $qr = db_query($q, $row->chapter);
         $obj = db_fetch_object($qr);
         $chapter = $obj->name?$obj->name:"None";
-        $page_content .= t("<div class='type'> <b>Chapter: </b> ") . $chapter . t("</div>");
+        $page_content .= t("<div class='type'> <b>Chapter: </b> ") . $chapter . ($row->chapter_no?" (<b>{$row->chapter_no}</b>)":"") . t("</div>");
 
         $page_content .= t("<div class='type'> <b>Category: </b>") . $categories[$row->category] . t("</div>");
 
@@ -74,7 +75,7 @@ function cloud_comments_all() {
         $obj = db_fetch_object($qr);
         $example_link = $obj->caption?l($obj->caption,"http://cloud.scilab.in/index.php?eid=".$row->example):"None";
 
-        $page_content .= t("<div class='example'> <b>Example: </b>") . $example_link .t("</div>");
+        $page_content .= t("<div class='example'> <b>Example: </b>") . $example_link . ($row->example_no?" (<b>{$row->example_no}</b>)":"") . t("</div>");
 
         $page_content .= t("<div class='comment'> <br><b>Comment:</b><br>") . $row->comment . t("</div>");
 
@@ -92,7 +93,7 @@ function cloud_comments_all() {
         }
         $page_content .= t("</div>");
     } // while ends
-
+	$page_content .= theme('pager', NULL, 5, 0);
     return $page_content;
 } // function cloud_comments_all
 
