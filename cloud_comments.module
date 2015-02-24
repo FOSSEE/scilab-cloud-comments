@@ -86,7 +86,11 @@ function cloud_comments_all($example_id=0) {
         $page_content .= t("<div class='comment'> <br><b>Comment:</b><br>") . $row->comment . t("</div>");
 
         if ($row->reply) {
-            $page_content .= t("<div class='reply'> <br><b>Reply Sent:</b><br>") . $row->reply . t("</div>");
+            if(!$row->user){
+          $page_content .= t("<div class='reply'> <br><b>Reply Sent:</b><br>") . $row->reply . t("</div>");           
+        }else{         
+          $page_content .= t("<div class='reply'> <br><b>Reply Sent By ".$row->user.":</b><br>") . $row->reply . t("</div>");
+        }
         }
         else {
             if (user_access("reply cloud_comments")) {
@@ -136,8 +140,10 @@ function cloud_comments_reply_form($form_state, $comment_id) {
 } // function reply_form
 
 function cloud_comments_reply_form_submit($form, &$form_state) {
-    $query = "UPDATE {scilab_cloud_comment} SET reply = '%s', reply_status = 1 WHERE id = %d";
-    $query_result = db_query($query, $form_state["values"]["content"], $form_state["values"]["hidden"]);
+    global $user;
+     
+    $query = "UPDATE {scilab_cloud_comment} SET reply = '%s', user= '%s' reply_status = 1 WHERE id = %d";
+    $query_result = db_query($query, $form_state["values"]["content"], $user->name, $form_state["values"]["hidden"]);
     
     $email_query = "SELECT email FROM {scilab_cloud_comment} WHERE id = %d";
     $result = db_query($email_query, $form_state["values"]["hidden"]);
