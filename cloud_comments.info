@@ -1,3 +1,4 @@
 name = Cloud comments
 description = A module to view and reply to Scilab on Cloud comments.
-core = 6.x
+core = 7.x
+package =IITB

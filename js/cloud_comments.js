@@ -1,6 +1,7 @@
+(function($) {
 $(document).ready(function(){
     /* to avoid CKE partial loading... */
-    $('.form-wrapper').slideToggle();
+//    $('.formwrapper').slideToggle();
 
     /* reply button action */
     $(".btn-reply a").click(function(){
@@ -27,3 +28,4 @@ $(document).ready(function(){
         e.preventDefault();
     });
 });
+})(jQuery);
